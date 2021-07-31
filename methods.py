@@ -1,7 +1,9 @@
-from interfaces import AbstractSolver, Fun
-import numpy as np
+import time
 
+import numpy as np
 from scipy import optimize
+
+from interfaces import AbstractSolver, Fun
 
 
 class SubgradientDescent(AbstractSolver):
@@ -43,7 +45,7 @@ class SubgradientSteepestDescent(AbstractSolver):
 
 class SubgradientMirrorDescent(AbstractSolver):
     def __init__(self, strongly_convex_fun_const):
-        print("mu parameter: ", strongly_convex_fun_const)
+        # print("mu parameter: ", strongly_convex_fun_const)
         self.mu = strongly_convex_fun_const
 
     @staticmethod
@@ -67,7 +69,7 @@ class SubgradientMirrorDescent(AbstractSolver):
     @staticmethod
     def projection_Q(h, gr, x_k):
         proj_arg = x_k - h * gr
-        return proj_arg
+        # return proj_arg
         proj_norm = np.linalg.norm(proj_arg)
         rad_q_sphere = 1
         if proj_norm <= rad_q_sphere:
@@ -80,16 +82,21 @@ class SubgradientMirrorDescent(AbstractSolver):
         x = np.array(x_0)
         iterations.append(x)
         f_vals.append(fun.call_f(x))
+        start_time = round(time.time() * 1000)
         for i_iter in range(n_iter):
             h = 2 / (self.mu * (i_iter + 1))
             gr = fun.call_grad(x)
             # print("\t radius: ", np.linalg.norm(x - points_to_cover[0]))
             x = self.projection_Q(h, gr, x)
             # x = self.argmin_subtask(h, gr, x)
-            # print("\t iter:   ", i_iter)
-            # print("\t h:      ", h)
-            # print("\t gr:     ", gr)
-            # print("\t x:      ", x)
+            # if i_iter % 100 == 0:
+            #     print("\t iter:   ", i_iter)
+            #     print("\t h:      ", h)
+            #     print("\t gr:     ", gr)
+            #     print("\t x:      ", x)
             iterations.append(x)
-            f_vals.append(fun.call_f(x))
+            f_vals.append(fun.call_f(np.sum([2 * i_iter * xk / (n_iter * (n_iter - 1)) for xk in iterations])))
+            end_iter_time = round(time.time() * 1000)
+            if i_iter % 1000 == 1:
+                print("expected: ", (end_iter_time - start_time) * n_iter/(i_iter * 60_000))
         return iterations, f_vals

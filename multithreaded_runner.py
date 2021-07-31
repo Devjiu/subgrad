@@ -1,21 +1,21 @@
-import logging
-import threading
-import time
-import numpy as np
 import concurrent.futures
+import logging
+import multiprocessing
+
 from matplotlib import pyplot as plt
 
 from methods import *
 from problems import *
 
 
-def single_opt_task(solver: AbstractSolver, n_iter):
-    np.random.seed(17)
+def single_opt_task(seed, solver: AbstractSolver, n_iter):
+    np.random.seed(seed)
     fun = Fun(covering_sphere_problem(np.random.rand(500, 500)))
     x_0 = np.random.randn(500)
     xs, f_vals = solver.minimize(x_0, fun, n_iter=n_iter)
     g_norm = np.array([np.linalg.norm(fun.call_grad(x)) for x in xs])
     return f_vals, g_norm
+
 
 if __name__ == '__main__':
 
@@ -23,7 +23,7 @@ if __name__ == '__main__':
     m = 50
     n = 5
     n_iter = 1_000
-    n_exp = 10
+    n_exp = 100
     lam = 0.9
     alpha = 0.01
 
@@ -35,10 +35,10 @@ if __name__ == '__main__':
                         datefmt="%H:%M:%S")
     logging.info("Main    : all done")
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=16) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=multiprocessing.cpu_count()) as executor:
         method = SubgradientMirrorDescent(strongly_convex_fun_const=2)
         future_to_exp_num = {
-            executor.submit(single_opt_task, method, n_iter): exp for exp in range(n_exp)}
+            executor.submit(single_opt_task, exp, method, n_iter): exp for exp in range(n_exp)}
         for future in concurrent.futures.as_completed(future_to_exp_num):
             exp_num = future_to_exp_num[future]
             try:
