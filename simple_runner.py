@@ -17,13 +17,13 @@ def draw_result(x_args, f_vals, g_norm, problem_name, x_solutions, f_solutions, 
     ax.set_ylabel(f'$f(x_k) - f(x_*)$')
     f_vals = np.array([f_vals[exp] - f_solutions[exp] for exp in range(n_exp)])
     ax.set_xlabel('iteration')
-    print("upper bounds: ", upper_bound(0))
-    if upper_bound is not None:
-        ax.plot(np.arange(n_iter + 1), [upper_bound(iter) for iter in range(n_iter + 1)])
     ax.semilogy(f_vals.mean(axis=0))
     ax.fill_between(np.arange(n_iter + 1), f_vals.mean(axis=0) - f_vals.std(axis=0),
                     f_vals.mean(axis=0) + f_vals.std(axis=0), alpha=0.3)
 
+    print("upper bounds: ", upper_bound(0))
+    if upper_bound is not None:
+        ax.plot(np.arange(n_iter + 1), [upper_bound(iter) for iter in range(n_iter + 1)])
     # ax = fig.add_subplot(1, 3, 2)
     # ax.set_ylabel(f'$\|x_k - x_*\|$')
     # ax.set_xlabel('iteration')
@@ -41,7 +41,7 @@ def draw_result(x_args, f_vals, g_norm, problem_name, x_solutions, f_solutions, 
                     g_norm.mean(axis=0) + g_norm.std(axis=0), alpha=0.3)
     fig.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.savefig('SD.svg')
-    # plt.show()
+    plt.show()
 
 
 if __name__ == '__main__':
@@ -50,13 +50,13 @@ if __name__ == '__main__':
     m = 50
     n = 5
     n_iter = 1000
-    n_exp = 3
+    n_exp = 10
     lam = 0.9
     alpha = 0.01
-    dim = 500
+    dim = 2000
 
     mu = 2
-    epsilon = 1e-1
+    epsilon = 1e-2
 
     # np.linalg.norm(fun.call_grad(x_0)) <= M
     M = 4 # np.linalg.norm(fun.call_grad(x_0))
@@ -96,7 +96,5 @@ if __name__ == '__main__':
         print(f'$x_k - x_*$:', np.linalg.norm(x_args_array[exp] - x_solution))
         print("radius: ", np.linalg.norm(x_args_array[exp] - points_to_cover[0]))
         print(f'solution radius:', np.linalg.norm(x_solution - points_to_cover[0]))
-    def up_bound(it):
-        return 2*(M**2)/(mu*(i+1))
     draw_result(x_args_array, f_vals_array, g_norm_array, covering_sphere_problem.__name__, x_solutions,
             f_solutions, upper_bound=lambda i: 2 * (M ** 2)/(mu * (i + 1)))
