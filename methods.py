@@ -78,25 +78,38 @@ class SubgradientMirrorDescent(AbstractSolver):
 
     def minimize(self, x_0, fun: Fun, n_iter=500):
         iterations = []
+        f_raw_vals = []
         f_vals = []
         x = np.array(x_0)
         iterations.append(x)
-        f_vals.append(fun.call_f(x))
-        start_time = round(time.time() * 1000)
-        for i_iter in range(n_iter):
+        x_averaged = np.sum([k * xk for k, xk in
+                             enumerate(iterations, 1)], axis=0)
+        for val in range(len(x)):
+            if x[val] != x_averaged[val]:
+                raise RuntimeError("Smth has gone wrong")
+        f_vals.append(fun.call_f(x_averaged))
+        f_raw_vals.append(fun.call_f(x))
+        # start_time = round(time.time() * 1000)
+        for i_iter in range(1, n_iter):
             h = 2 / (self.mu * (i_iter + 1))
             gr = fun.call_grad(x)
-            # print("\t radius: ", np.linalg.norm(x - points_to_cover[0]))
             x = self.projection_Q(h, gr, x)
-            # x = self.argmin_subtask(h, gr, x)
-            # if i_iter % 100 == 0:
-            #     print("\t iter:   ", i_iter)
-            #     print("\t h:      ", h)
-            #     print("\t gr:     ", gr)
-            #     print("\t x:      ", x)
+
+            if len(iterations) != i_iter:
+                raise RuntimeError("why")
             iterations.append(x)
-            f_vals.append(fun.call_f(np.sum([2 * i_iter * xk / (n_iter * (n_iter - 1)) for xk in iterations])))
-            end_iter_time = round(time.time() * 1000)
-            if i_iter % 1000 == 1:
-                print("expected: ", (end_iter_time - start_time) * n_iter/(i_iter * 60_000))
-        return iterations, f_vals
+            x_averaged = np.sum([2 * k * xk / (i_iter * (i_iter + 1)) for k, xk in
+                                 enumerate(iterations, 1)], axis=0)
+            if i_iter % 50 == 0:
+                print("\t iter:      ", i_iter)
+                print("\t h:         ", h)
+                print("\t gr:        ", gr)
+                print("\t x:         ", x)
+                # print("\t radius:    ", np.linalg.norm(x - points_to_cover[0]))
+                print("\t generated: ", x_averaged)
+            f_vals.append(fun.call_f(x_averaged))
+            f_raw_vals.append(fun.call_f(x))
+            # end_iter_time = round(time.time() * 1000)
+            # if i_iter % 1000 == 1:
+            #     print("expected: ", (end_iter_time - start_time) * n_iter / (i_iter * 60_000))
+        return iterations, f_vals, f_raw_vals
