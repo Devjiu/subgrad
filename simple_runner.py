@@ -26,21 +26,24 @@ def draw_result(x_args, f_vals, f_raw_vals, g_norm, problem_name, x_solutions, f
 
     print("minimal f discrepancy: ", f_discrepancy.min())
     ax.set_xlabel('iteration')
-    ax.set_ylim([0, 50])
-    ax.plot(np.arange(n_it), f_discrepancy, label="discrepancy", color="b")
-    # ax.semilogy(f_vals.mean(axis=0))
-    # ax.fill_between(np.arange(n_it), f_vals.mean(axis=0) - f_vals.std(axis=0),
-    #                 f_vals.mean(axis=0) + f_vals.std(axis=0), alpha=0.3)
+    ax.set_ylim([0, 0.1])
+    # ax.plot(np.arange(n_it), f_discrepancy, label="discrepancy", color="b")
+    ax.semilogy(f_vals.mean(axis=0), label="discrepancy", color="g")
+    ax.fill_between(np.arange(n_it), f_vals.mean(axis=0) - f_vals.std(axis=0),
+                    f_vals.mean(axis=0) + f_vals.std(axis=0), alpha=0.3)
+    non_adaptive = lambda i: 2 * (M ** 2) / (mu * (i + 1))
+    ax.plot(list(range(n_it)), [non_adaptive(iter) for iter in range(n_it)],
+            label=f'non-adaptive')
 
-    upp_0 = []
-    upp_1 = []
-    if upper_bounds is not None:
-        for ind, upper_bound in enumerate(upper_bounds):
-            if ind == 0:
-                ax.plot(list(range(n_it)), [upper_bound(iter) for iter in range(n_it)],
-                        label=f'non-adaptive')
-            else:
-                ax.plot(list(range(n_it)), [upper_bound(iter) for iter in range(n_it)], label=f'adaptive bound')
+    def adaptive(i):
+        # this part cut due to small irrelevant values on a small amount of iterations
+        if i < 70:
+            return 10
+        else:
+            return (2 / (mu * i * (i + 1))) * np.sum(
+                [k * np.square(g_norm_array[0][k]) / (k + 1) for k in range(i)], axis=0)
+
+    ax.plot(list(range(n_it)), [adaptive(iter) for iter in range(n_it)], label=f'adaptive bound')
     ax.legend(loc="upper right")
 
     ax = fig.add_subplot(3, 1, 2)
@@ -49,15 +52,12 @@ def draw_result(x_args, f_vals, f_raw_vals, g_norm, problem_name, x_solutions, f
     print("2 shapes: ", f_raw_vals.shape)
     f_raw_disc = np.array([f_raw_vals[exp] - f_solutions[exp] for exp in range(n_exp)][0])
     print("minimal raw f discrepancy: ", f_raw_disc.min())
-    ax.set_ylim([0, 50])
+    ax.set_ylim([0, 0.1])
     ax.plot(np.arange(n_it), f_raw_disc, label="discrepancy", color="b")
-    if upper_bounds is not None:
-        for ind, upper_bound in enumerate(upper_bounds):
-            if ind == 0:
-                ax.plot(list(range(n_it)), [upper_bound(iter) for iter in range(n_it)],
-                        label=f'non-adaptive')
-            else:
-                ax.plot(list(range(n_it)), [upper_bound(iter) for iter in range(n_it)], label=f'adaptive bound')
+    print("M: ", M, " mu: ", mu)
+    ax.plot(list(range(n_it)), [non_adaptive(iter) for iter in range(n_it)],
+            label=f'non-adaptive')
+    ax.plot(list(range(n_it)), [adaptive(iter) for iter in range(n_it)], label=f'adaptive bound')
     ax.legend(loc="upper right")
 
     ax = fig.add_subplot(3, 1, 3)
@@ -69,6 +69,7 @@ def draw_result(x_args, f_vals, f_raw_vals, g_norm, problem_name, x_solutions, f
     for exp in range(n_exp):
         for x_dicr_iter in x_discrepancy[exp]:
             x_discrepancy_norm[exp] = np.linalg.norm(x_dicr_iter)
+    print("produced shape: ", x_discrepancy_norm.shape)
     ax.plot(np.arange(n_it), x_discrepancy_norm[0], label="discrepancy", color="b")
     ax.legend(loc="upper right")
 
@@ -97,13 +98,13 @@ if __name__ == '__main__':
     # PARAMETERS
     m = 50
     n = 5
-    n_exp = 1
+    n_exp = 10
     lam = 0.9
     alpha = 0.01
-    dim = 1000
+    dim = 1500
 
     mu = 2
-    epsilon = 1e-1
+    epsilon = 1e-2
 
     # np.linalg.norm(fun.call_grad(x_0)) <= M
     Q_radius = 6
