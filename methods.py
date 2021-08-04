@@ -1,7 +1,4 @@
-import time
-
 import numpy as np
-from scipy import optimize
 
 from interfaces import AbstractSolver, Fun
 
@@ -44,37 +41,16 @@ class SubgradientSteepestDescent(AbstractSolver):
 
 
 class SubgradientMirrorDescent(AbstractSolver):
-    def __init__(self, strongly_convex_fun_const):
-        # print("mu parameter: ", strongly_convex_fun_const)
+    def __init__(self, strongly_convex_fun_const, q_set_radius):
         self.mu = strongly_convex_fun_const
+        self.q_set_radius = q_set_radius
 
-    @staticmethod
-    def argmin_subtask(h, gr, x_k):
-        def f(x):
-            return h * (gr.T @ (x - x_k)) + np.square(np.linalg.norm(x - x_k)) / 2
-
-        x_0 = np.zeros((5, 1))
-        # set x in Q, where Q is simplex
-        A_matrix = np.zeros((5, 5))
-        A_matrix[0, :] = 1
-        left_border = np.zeros(5)
-        left_border[0] = 0
-        right_border = np.zeros(5)
-        right_border[0] = 1
-        linear_constraint = optimize.LinearConstraint(A_matrix.tolist(), left_border, right_border)
-        vec_res = optimize.minimize(f, x_0, tol=1e-6, constraints=linear_constraint)
-        print("\t\tres default: ", vec_res.fun)
-        return vec_res.x
-
-    @staticmethod
-    def projection_Q(h, gr, x_k):
+    def projection_Q(self, h, gr, x_k):
         proj_arg = x_k - h * gr
-        # return proj_arg
         proj_norm = np.linalg.norm(proj_arg)
-        rad_q_sphere = 1
-        if proj_norm <= rad_q_sphere:
+        if proj_norm <= self.q_set_radius:
             return proj_arg
-        return rad_q_sphere * proj_arg / proj_norm
+        return self.q_set_radius * proj_arg / proj_norm
 
     def minimize(self, x_0, fun: Fun, n_iter=500):
         iterations = []
@@ -84,9 +60,6 @@ class SubgradientMirrorDescent(AbstractSolver):
         iterations.append(x)
         x_averaged = np.sum([k * xk for k, xk in
                              enumerate(iterations, 1)], axis=0)
-        for val in range(len(x)):
-            if x[val] != x_averaged[val]:
-                raise RuntimeError("Smth has gone wrong")
         f_vals.append(fun.call_f(x_averaged))
         f_raw_vals.append(fun.call_f(x))
         # start_time = round(time.time() * 1000)
@@ -94,19 +67,19 @@ class SubgradientMirrorDescent(AbstractSolver):
             h = 2 / (self.mu * (i_iter + 1))
             gr = fun.call_grad(x)
             x = self.projection_Q(h, gr, x)
-
-            if len(iterations) != i_iter:
-                raise RuntimeError("why")
-            iterations.append(x)
+            if i_iter != len(iterations):
+                print("i_iter: ", i_iter, " iterations: ", len(iterations))
+                raise RuntimeError("wtf i_iter wrong")
             x_averaged = np.sum([2 * k * xk / (i_iter * (i_iter + 1)) for k, xk in
                                  enumerate(iterations, 1)], axis=0)
-            if i_iter % 50 == 0:
-                print("\t iter:      ", i_iter)
-                print("\t h:         ", h)
-                print("\t gr:        ", gr)
-                print("\t x:         ", x)
-                # print("\t radius:    ", np.linalg.norm(x - points_to_cover[0]))
-                print("\t generated: ", x_averaged)
+            iterations.append(x)
+            # if i_iter % 50 == 0:
+            #     print("iter     : ", i_iter)
+            #     print("h        : ", h)
+            #     print("gr       : ", gr[0:6])
+            #     print("x        : ", x[0:6])
+            # print("\t radius:    ", np.linalg.norm(x - points_to_cover[0]))
+            # print("\t generated: ", x_averaged)
             f_vals.append(fun.call_f(x_averaged))
             f_raw_vals.append(fun.call_f(x))
             # end_iter_time = round(time.time() * 1000)
