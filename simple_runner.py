@@ -10,13 +10,13 @@ np.random.seed(1)
 def draw_result(x_args, f_vals, f_raw_vals, g_norm, problem_name, x_solutions, f_solutions,
                 upper_bounds: list = None,
                 down_bound=None):
-    fig = plt.figure(figsize=(8, 16))
+    fig = plt.figure(figsize=(8, 12))
     print("f_vals shape: ", f_vals.shape)
     n_exp = f_vals.shape[0]
     n_it = f_vals.shape[1]
     fig.suptitle(f'Solving {problem_name}. {n_exp} runs.')
 
-    ax = fig.add_subplot(4, 1, 1)
+    ax = fig.add_subplot(3, 1, 1)
     ax.set_ylabel(f'$f(\widehat{{x}}) - f(x_*)$')
 
     print("1 shapes: ", f_vals[0].shape)
@@ -26,29 +26,41 @@ def draw_result(x_args, f_vals, f_raw_vals, g_norm, problem_name, x_solutions, f
 
     print("minimal f discrepancy: ", f_discrepancy.min())
     ax.set_xlabel('iteration')
-    ax.set_ylim([0, 10])
-    ax.plot(np.arange(n_it), f_discrepancy)
+    ax.set_ylim([0, 50])
+    ax.plot(np.arange(n_it), f_discrepancy, label="discrepancy", color="b")
     # ax.semilogy(f_vals.mean(axis=0))
     # ax.fill_between(np.arange(n_it), f_vals.mean(axis=0) - f_vals.std(axis=0),
     #                 f_vals.mean(axis=0) + f_vals.std(axis=0), alpha=0.3)
 
+    upp_0 = []
+    upp_1 = []
     if upper_bounds is not None:
-        for upper_bound in upper_bounds:
-            ax.plot(list(range(n_it)), [upper_bound(iter) for iter in range(n_it)])
+        for ind, upper_bound in enumerate(upper_bounds):
+            if ind == 0:
+                ax.plot(list(range(n_it)), [upper_bound(iter) for iter in range(n_it)],
+                        label=f'non-adaptive')
+            else:
+                ax.plot(list(range(n_it)), [upper_bound(iter) for iter in range(n_it)], label=f'adaptive bound')
+    ax.legend(loc="upper right")
 
-    ax = fig.add_subplot(4, 1, 2)
+    ax = fig.add_subplot(3, 1, 2)
     ax.set_ylabel(f'$f(x_k) - f(x_*)$')
     ax.set_xlabel('iteration')
     print("2 shapes: ", f_raw_vals.shape)
     f_raw_disc = np.array([f_raw_vals[exp] - f_solutions[exp] for exp in range(n_exp)][0])
     print("minimal raw f discrepancy: ", f_raw_disc.min())
-    ax.set_ylim([0, 10])
-    ax.plot(np.arange(n_it), f_raw_disc)
+    ax.set_ylim([0, 50])
+    ax.plot(np.arange(n_it), f_raw_disc, label="discrepancy", color="b")
     if upper_bounds is not None:
-        for upper_bound in upper_bounds:
-            ax.plot(list(range(n_it)), [upper_bound(iter) for iter in range(n_it)])
+        for ind, upper_bound in enumerate(upper_bounds):
+            if ind == 0:
+                ax.plot(list(range(n_it)), [upper_bound(iter) for iter in range(n_it)],
+                        label=f'non-adaptive')
+            else:
+                ax.plot(list(range(n_it)), [upper_bound(iter) for iter in range(n_it)], label=f'adaptive bound')
+    ax.legend(loc="upper right")
 
-    ax = fig.add_subplot(4, 1, 3)
+    ax = fig.add_subplot(3, 1, 3)
     ax.set_ylabel(f'$x_k - x_*$')
     ax.set_xlabel('iteration')
     print("3 shapes: ", x_args[0].shape, " x_sol: ", x_solutions[0].shape)
@@ -57,13 +69,8 @@ def draw_result(x_args, f_vals, f_raw_vals, g_norm, problem_name, x_solutions, f
     for exp in range(n_exp):
         for x_dicr_iter in x_discrepancy[exp]:
             x_discrepancy_norm[exp] = np.linalg.norm(x_dicr_iter)
-    ax.plot(np.arange(n_it), x_discrepancy_norm[0])
-
-    ax = fig.add_subplot(4, 1, 4)
-    ax.set_ylabel(f'$f(x_k)$')
-    ax.set_xlabel('iteration')
-    ax.plot(np.arange(n_it), f_raw_vals[0])
-    ax.plot(np.arange(n_it), f_solutions[0] * np.ones(n_it))
+    ax.plot(np.arange(n_it), x_discrepancy_norm[0], label="discrepancy", color="b")
+    ax.legend(loc="upper right")
 
     # ax = fig.add_subplot(1, 3, 2)
     # ax.set_ylabel(f'$\|x_k - x_*\|$')
@@ -96,10 +103,10 @@ if __name__ == '__main__':
     dim = 1000
 
     mu = 2
-    epsilon = 1e-2
+    epsilon = 1e-1
 
     # np.linalg.norm(fun.call_grad(x_0)) <= M
-    Q_radius = 10
+    Q_radius = 6
     M = 2 * Q_radius  # np.linalg.norm(fun.call_grad(x_0))
     n_iter = 2 * (M ** 2) / (mu * epsilon)
     print("min n_iter: ", n_iter)
@@ -143,7 +150,10 @@ if __name__ == '__main__':
         print(f'$x_k - x_*$:', np.linalg.norm(x_args_array[exp] - x_solution))
         print("radius: ", np.linalg.norm(x_args_array[exp] - points_to_cover[0]))
         print(f'solution radius:', np.linalg.norm(x_solution - points_to_cover[0]))
+    # print("g norm: ", [k * np.square(g_norm_array[k]) / (k + 1) for k in range(n_iter)])
+    # print("sum: ", np.sum(
+    #     [k * np.square(g_norm_array[k]) / (k + 1) for k in range(n_iter)], axis=0))
     draw_result(x_args_array, f_vals_array, f_raw_vals_array, g_norm_array, covering_sphere_problem.__name__,
                 x_solutions, f_solutions,
                 upper_bounds=[lambda i: 2 * (M ** 2) / (mu * (i + 1)), lambda i: 2 * np.sum(
-                    [k * np.square(g_norm_array[k]) / (k + 1) for k in range(n_iter)]) / (mu * (i + 1))])
+                    [k * np.square(g_norm_array[0][k]) / (k + 1) for k in range(n_iter)], axis=0) / (mu * (i + 1))])
