@@ -7,18 +7,7 @@ from hashlib import md5
 from methods import *
 from problem_parmeters_generator import *
 from problems import *
-
-
-def save_result(base_dir: str, solver: str, target_fun: str, id: str, x_args, f_vals, g_norm,
-                x_solution, f_solution):
-    res_path = base_dir + "/" + solver + "/" + target_fun + "/"
-    if not os.path.exists(res_path):
-        os.makedirs(res_path)
-
-    full_res_path = res_path + id + ".npz"
-    np.savez_compressed(full_res_path, x_args=x_args, f_vals=f_vals, g_norm=g_norm,
-                        x_solution=x_solution, f_solution=f_solution)
-    return full_res_path
+from utils import *
 
 
 def single_opt_task(seed, fun: Fun, solver: AbstractSolver, n_iter: int, dim: int, exp: int):

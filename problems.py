@@ -23,12 +23,6 @@ class covering_sphere_problem_strong_convex(AbstractProblem):
         self.points = points_to_cover
 
     def __call__(self, x):
-        # print("x_k        : ", x[0:6])
-        # for point in self.points:
-        #     print("\tpoint      : ", point[0:6])
-        #     print("\tx_k - point: ", (x - point)[0:6])
-        #     print("\tnorm       : ", np.linalg.norm(x - point))
-        # print("max        : ", np.max([np.square(np.linalg.norm(x - point)) for point in self.points]))
         return np.max([np.square(np.linalg.norm(x - point)) for point in self.points])
 
     # f(x) >= f(x_0) + <g, x- x_0>
@@ -52,9 +46,10 @@ class covering_sphere_problem_convex(AbstractProblem):
 
     # f(x) >= f(x_0) + <g, x- x_0>
     def grad(self, x):
-        fun_values = [np.square(np.linalg.norm(x - point)) for point in self.points]
+        fun_values = [np.linalg.norm(x - point) for point in self.points]
         max_ind = np.concatenate(np.argwhere(fun_values == np.max(fun_values))).tolist()
-        return 2 * (x - self.points[max_ind[0]])
+        x_meets = x - self.points[max_ind[0]]
+        return x_meets / np.linalg.norm(x_meets)
 
     def hess(self, x):
         return 2
