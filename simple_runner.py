@@ -96,11 +96,7 @@ def draw_result(x_args, f_vals, f_raw_vals, g_norm, problem_name, x_solutions, f
 if __name__ == '__main__':
 
     # PARAMETERS
-    m = 50
-    n = 5
     n_exp = 10
-    lam = 0.9
-    alpha = 0.01
     dim = 1500
 
     mu = 2
@@ -133,7 +129,7 @@ if __name__ == '__main__':
               " sum: ", np.linalg.norm(x_solution) + radius)
         points_to_cover = generate_points_to_cover(x_solution, radius, dim // 10)
 
-        fun = Fun(covering_sphere_problem(points_to_cover))
+        fun = Fun(covering_sphere_problem_strong_convex(points_to_cover))
         method = SubgradientMirrorDescent(strongly_convex_fun_const=mu, q_set_radius=Q_radius)
 
         x_solutions[exp] = list(x_solution)
@@ -154,7 +150,7 @@ if __name__ == '__main__':
     # print("g norm: ", [k * np.square(g_norm_array[k]) / (k + 1) for k in range(n_iter)])
     # print("sum: ", np.sum(
     #     [k * np.square(g_norm_array[k]) / (k + 1) for k in range(n_iter)], axis=0))
-    draw_result(x_args_array, f_vals_array, f_raw_vals_array, g_norm_array, covering_sphere_problem.__name__,
+    draw_result(x_args_array, f_vals_array, f_raw_vals_array, g_norm_array, covering_sphere_problem_strong_convex.f.__name__,
                 x_solutions, f_solutions,
                 upper_bounds=[lambda i: 2 * (M ** 2) / (mu * (i + 1)), lambda i: 2 * np.sum(
                     [k * np.square(g_norm_array[0][k]) / (k + 1) for k in range(n_iter)], axis=0) / (mu * (i + 1))])

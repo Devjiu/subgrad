@@ -12,8 +12,10 @@ class AbstractProblem(object, metaclass=abc.ABCMeta):
 
 
 class Fun:
-    def __init__(self, fun: AbstractProblem):
+    def __init__(self, fun: AbstractProblem, x_solution):
         self.f = fun
+        self.x_solution = x_solution
+        self.f_solution = self.f(x_solution)
 
     def call_f(self, x):
         return self.f(x)
