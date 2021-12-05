@@ -1,30 +1,32 @@
 import abc
 
 
-class AbstractProblem(object, metaclass=abc.ABCMeta):
+class AbstractProblem(abc.ABC):
     @abc.abstractmethod
-    def __call__(self, x):
-        raise RuntimeError
+    def fun(self, x):
+        pass
 
     @abc.abstractmethod
     def grad(self, x):
-        raise RuntimeError
+        pass
+
+    @abc.abstractmethod
+    def bregman(self, x, y):
+        pass
 
 
-class Fun:
-    def __init__(self, fun: AbstractProblem, x_solution):
+class AbstractSolver(abc.ABC):
+    def __init__(self, fun: callable, grad: callable, bregman: callable, x_solution):
         self.f = fun
+        self.grad = grad
+        self.bregman = bregman
         self.x_solution = x_solution
         self.f_solution = self.f(x_solution)
 
-    def call_f(self, x):
-        return self.f(x)
-
-    def call_grad(self, x):
-        return self.f.grad(x)
-
-
-class AbstractSolver(object, metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def minimize(self, x_0, fun: Fun, n_iter=500):
-        raise RuntimeError
+    def minimize(self, x_0, n_iter=500):
+        pass
+
+    @abc.abstractmethod
+    def estimate(self, opt_params, x):
+        pass

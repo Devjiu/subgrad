@@ -1,6 +1,93 @@
+import multiprocessing
+import os
+
 import numpy as np
 from matplotlib import pyplot as plt
-import os
+
+pool = None
+
+
+def init_globals():
+    num_workers = 4
+    global pool
+    pool = multiprocessing.Pool(num_workers)
+
+
+def average_all_before(n, x):
+    tmp = np.sum([2 * k * x[k] / (n * (n + 1)) for k in range(1, n)], axis=0)
+    return tmp
+
+
+def averaging_base(x, step=1):
+    # bounce_heuristic = 2_000
+    # if len(x) <= bounce_heuristic:
+    #     return [np.sum([2 * k * x[k] / (n * (n + 1)) for k in range(1, n)], axis=0) for n in range(1, len(x), step)]
+    # else:
+    global pool
+    args = [(n, x) for n in range(1 + step, len(x) + 1, step)]
+    num_workers = 4
+    results = pool.starmap(average_all_before, args)
+    # results.insert(0, x[1])
+    return results
+
+
+def averaging(x):
+    n = x.shape[0]
+    tmp = x[1:]
+    rg = np.array(range(1, n), dtype=float)
+    s = 2 * rg
+    cs = np.cumsum((tmp.T * s).T, axis=0).reshape(n - 1, x.shape[1])
+    tp = np.reciprocal((rg + 1) * (rg + 2))
+    # tp = np.array([1 / (k * (k + 1)) for k in range(2, n+1)], dtype=float)
+    return (cs.T * tp).T
+
+
+# if __name__ == '__main__':
+#     multiprocessing.freeze_support()
+#     gen = np.array(list(range(5)) * 10, dtype=float).reshape(10, 5) # np.random.randn(35000, 1000)
+#     print("gen: ", gen)
+#
+#     # args = [(n, gen) for n in range(2, 20)]
+#     # num_workers = 4
+#     # with multiprocessing.Pool(num_workers) as pool:
+#     #     results = pool.starmap(average_all_before, args)
+#     # results.insert(0, gen[0] * 0)
+#     # print("res: ", results)
+#
+#     print("sh: ", gen.shape)
+#     start_time = datetime.now()
+#     x_avg = np.array(averaging_base(gen))
+#     print("avg : ", (datetime.now() - start_time).total_seconds())
+#     start_time = datetime.now()
+#     x_aveg = averaging(gen)
+#     print("avg cumsum: ", (datetime.now() - start_time).total_seconds())
+#     print("prod shape: ", x_aveg.shape)
+#     print(x_avg.shape, " vs ", x_aveg.shape)
+#     print("same?: ", (x_aveg == x_avg).all())
+#     print("diff: ", np.max(x_avg - x_aveg))
+#     print("base: ")
+#     print(x_avg)
+#     print("cumsum: ")
+#     print(x_aveg)
+
+def proxy_fun(xs, fun: callable):
+    f = fun
+    ret = [f(xk) for xk in xs]
+    return ret
+
+
+def apply(x, fun: callable):
+    bounce_heuristic = 1_000
+    global pool
+    f = fun
+    if len(x) <= bounce_heuristic:
+        return [f(xk) for xk in x]
+    else:
+        args = [(x_sl, f) for x_sl in np.array_split(x, len(x) // bounce_heuristic)]
+        # num_workers = 4
+        # with multiprocessing.Pool(num_workers) as pool:
+        results = pool.starmap(proxy_fun, args)
+        return [item for sublist in results for item in sublist]
 
 
 def draw_result(figname: str, x_args, f_vals, f_raw_vals, g_norm, problem_name, x_solutions, f_solutions,
@@ -55,12 +142,16 @@ def draw_result(figname: str, x_args, f_vals, f_raw_vals, g_norm, problem_name, 
 
 
 def save_result(base_dir: str, solver: str, target_fun: str, id: str, x_args, f_vals, g_norm,
-                x_solution, f_solution):
+                x_solution, f_solution, optional_parameters=None):
     res_path = base_dir + "/" + solver + "/" + target_fun + "/"
     if not os.path.exists(res_path):
         os.makedirs(res_path)
 
     full_res_path = res_path + id + ".npz"
-    np.savez_compressed(full_res_path, x_args=x_args, f_vals=f_vals, g_norm=g_norm,
-                        x_solution=x_solution, f_solution=f_solution)
+    if optional_parameters is not None:
+        np.savez_compressed(full_res_path, x_args=x_args, f_vals=f_vals, g_norm=g_norm,
+                            x_solution=x_solution, f_solution=f_solution, optional_parameters=optional_parameters)
+    else:
+        np.savez_compressed(full_res_path, x_args=x_args, f_vals=f_vals, g_norm=g_norm,
+                            x_solution=x_solution, f_solution=f_solution)
     return full_res_path
