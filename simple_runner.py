@@ -1,5 +1,5 @@
-from problems import *
-from utils import *
+from problems.problems import *
+from utils.utils import *
 
 
 def main(x_0_from_sol):

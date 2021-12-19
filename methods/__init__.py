@@ -1,0 +1,4 @@
+from .steepest_dscnt import SubgradientSteepestDescent
+from .sudbgradient_dscnt import SubgradientDescent
+from .vi_adapt_dscnt import SubgradientVIAdaptiveDescent
+from .vi_dscnt import SubgradientVIDescent

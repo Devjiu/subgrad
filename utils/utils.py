@@ -1,8 +1,8 @@
-import multiprocessing
 import os
 
 import numpy as np
 from matplotlib import pyplot as plt
+from pathos.multiprocessing import ProcessingPool as Pool
 
 pool = None
 
@@ -10,7 +10,12 @@ pool = None
 def init_globals():
     num_workers = 4
     global pool
-    pool = multiprocessing.Pool(num_workers)
+    pool = Pool(num_workers)
+
+
+def close_ppol():
+    pool.close()
+    pool.join()
 
 
 def average_all_before(n, x):
@@ -24,9 +29,8 @@ def averaging_base(x, step=1):
     #     return [np.sum([2 * k * x[k] / (n * (n + 1)) for k in range(1, n)], axis=0) for n in range(1, len(x), step)]
     # else:
     global pool
-    args = [(n, x) for n in range(1 + step, len(x) + 1, step)]
-    num_workers = 4
-    results = pool.starmap(average_all_before, args)
+    results = pool.map(average_all_before, [n for n in range(1 + step, len(x) + 1, step)],
+                       [x for _ in range(1 + step, len(x) + 1, step)])
     # results.insert(0, x[1])
     return results
 
@@ -42,33 +46,13 @@ def averaging(x):
     return (cs.T * tp).T
 
 
-# if __name__ == '__main__':
-#     multiprocessing.freeze_support()
-#     gen = np.array(list(range(5)) * 10, dtype=float).reshape(10, 5) # np.random.randn(35000, 1000)
-#     print("gen: ", gen)
-#
-#     # args = [(n, gen) for n in range(2, 20)]
-#     # num_workers = 4
-#     # with multiprocessing.Pool(num_workers) as pool:
-#     #     results = pool.starmap(average_all_before, args)
-#     # results.insert(0, gen[0] * 0)
-#     # print("res: ", results)
-#
-#     print("sh: ", gen.shape)
-#     start_time = datetime.now()
-#     x_avg = np.array(averaging_base(gen))
-#     print("avg : ", (datetime.now() - start_time).total_seconds())
-#     start_time = datetime.now()
-#     x_aveg = averaging(gen)
-#     print("avg cumsum: ", (datetime.now() - start_time).total_seconds())
-#     print("prod shape: ", x_aveg.shape)
-#     print(x_avg.shape, " vs ", x_aveg.shape)
-#     print("same?: ", (x_aveg == x_avg).all())
-#     print("diff: ", np.max(x_avg - x_aveg))
-#     print("base: ")
-#     print(x_avg)
-#     print("cumsum: ")
-#     print(x_aveg)
+# def fun(f, q_in, q_out):
+#     while True:
+#         i, x = q_in.get()
+#         if i is None:
+#             break
+#         q_out.put((i, f(x)))
+
 
 def proxy_fun(xs, fun: callable):
     f = fun
@@ -83,10 +67,10 @@ def apply(x, fun: callable):
     if len(x) <= bounce_heuristic:
         return [f(xk) for xk in x]
     else:
-        args = [(x_sl, f) for x_sl in np.array_split(x, len(x) // bounce_heuristic)]
         # num_workers = 4
         # with multiprocessing.Pool(num_workers) as pool:
-        results = pool.starmap(proxy_fun, args)
+        results = pool.map(proxy_fun, [x_sl for x_sl in np.array_split(x, len(x) // bounce_heuristic)],
+                           [f for _ in np.array_split(x, len(x) // bounce_heuristic)])
         return [item for sublist in results for item in sublist]
 
 

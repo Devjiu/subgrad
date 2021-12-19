@@ -5,7 +5,7 @@ from datetime import datetime
 from interfaces import AbstractSolver
 
 from methods import *
-from problems import p_norm_zhou
+from problems import fermat_toricelly_steiner
 from utils import *
 
 
@@ -74,6 +74,8 @@ def main():
     # n_iter = int(n_iter + 1)
     print("int n_iter: ", n_iter)
 
+    # это все вспомогательное нужно вынести куда-то
+    # проблема в том, что эти функции одновременно связаны и с минимизируемой функцией, и с методом
     def first_order_subproblem_analytical(x_k, gr_k, l_k):
         c_param = (1 / l_k) * gr_k - x_k * np.linalg.norm(x_k) ** (2 * p_param - 2)
         ret = - c_param / (np.linalg.norm(c_param) ** ((2 * p_param - 2) / (2 * p_param - 1)))
@@ -111,7 +113,7 @@ def main():
         return R
 
     x_solution = np.zeros(dim)
-    method = SubgradientVIAdaptiveDescent(problem=p_norm_zhou(p_param),
+    method = SubgradientVIAdaptiveDescent(problem=fermat_toricelly_steiner(p_param, np.array(np.ones((3, 1000)))),
                                           x_solution=x_solution,
                                           subproblem_fun=first_order_adaptive_subproblem_combined,
                                           estimation_fun=estimation_adaptive_scipy,

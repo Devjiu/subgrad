@@ -3,10 +3,11 @@ from hashlib import md5
 
 import cvxpy as cp
 from scipy.optimize import minimize
+from interfaces import AbstractSolver
 
 from methods import *
-from problems import *
-from utils import *
+from problems import p_norm_zhou
+from utils.utils import *
 
 
 def single_opt_task(seed, solver: AbstractSolver, n_iter: int, dim: int, exp: int, meta_descr: str = ""):
@@ -67,7 +68,7 @@ def main():
 
     # np.linalg.norm(fun.call_grad(x_0)) <= M
     # M = 2 * Q_radius  # np.linalg.norm(fun.call_grad(x_0))
-    n_iter = 350000  # 2 * (M ** 2) / (mu * epsilon)
+    n_iter = 35000  # 2 * (M ** 2) / (mu * epsilon)
     # print("min n_iter: ", n_iter)
     # n_iter *= 1.05
     # n_iter = int(n_iter + 1)
