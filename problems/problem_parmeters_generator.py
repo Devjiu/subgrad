@@ -21,4 +21,4 @@ def generate_points_to_cover(center, radius, number_of_points):
     correct_points.append(2 * center - correct_points[-1])
     # print("Generated shape: ", np.array(correct_points).shape)
     # print("First point: ", correct_points[0])
-    return correct_points
+    return np.array(correct_points)

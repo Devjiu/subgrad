@@ -30,3 +30,7 @@ class AbstractSolver(abc.ABC):
     @abc.abstractmethod
     def estimate(self, opt_params, x):
         pass
+
+    @abc.abstractmethod
+    def estimate_adaptive(self, opt_params, x):
+        pass

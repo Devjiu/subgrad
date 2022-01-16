@@ -41,9 +41,26 @@ class SubgradientVIDescent(AbstractSolver):
         optional_parameters["time"].append(total)
         return np.array(iterations), optional_parameters
 
-    def estimate(self, opt_params, x_avraged):
+    def estimate(self, opt_params, x_averaged):
         def theoretical_est(n):
-            return (2 * self.M) / (self.mu * (n + 1))
+            th = (2 * self.M) / (self.mu * (n + 1))
+            print(f"[{n:3d}] theoretical: {th:.3f}")
+            return th
 
-        theoretical = apply(range(0, len(x_avraged), 100), theoretical_est)
+        theoretical = apply(range(0, len(x_averaged), 100), theoretical_est)
         opt_params['theoretical_est'] = theoretical
+        # practical = apply(x_averaged[::50], self.estimation)
+
+    def estimate_adaptive(self, opt_params, g_n):
+        def theoretical_adaptive_est(g_n_):
+            g, n = g_n_
+            th = (2 * g) / (self.mu * n * (n + 1))
+            print(f"[{n-1:3d}] adaptive theoretical: {th:.3f} g: ", g, " n ", n)
+            return th
+        arg = []
+        grads = 0
+        for i in range(1, len(g_n) + 1):
+            grads += ((i * g_n[i-1] ** 2) / (i + 1))
+            arg.append((grads, i))
+        print("grads len: ", arg[-1])
+        practical = apply(arg[::100], theoretical_adaptive_est)
